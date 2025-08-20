@@ -1,0 +1,46 @@
+version: "3"
+services:
+  visit-nginx:
+    image: nginx:1.20
+    container_name: VISIT_Nginx
+    restart: unless-stopped
+    tty: true
+    ports:
+      - ${APP_PORT}:80 # HOST_PORT:CONTAINER_PORT
+      - "443:443"
+    volumes:
+      - ./:/var/www/html
+      - ./docker-conf/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - visit-php
+    networks:
+      - visit_docker
+
+  visit-php:
+    container_name: VISIT_PHP
+    build:
+      context: ./docker-conf/php
+    ports:
+      - "9033:9000"
+    volumes:
+      - ./:/var/www/html
+      - ./docker-conf/php/www.conf:/usr/local/etc/php-fpm.d/www.conf:rw
+      - ./docker-conf/php/php.ini:/usr/local/etc/php/php.ini:rw
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "200k"
+        max-file: "3"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - visit_docker
+
+
+networks:
+  visit_docker:
+    driver: "bridge"
+
+volumes:
+  dbdata:
+    driver: local
