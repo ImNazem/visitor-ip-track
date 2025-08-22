@@ -4,25 +4,52 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Services\SupabaseService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 
 use Exception;
+use Illuminate\Support\Facades\Log;
 
 class IpInfoController extends Controller
 {
-    private $userAgents = [
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0',
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/120.0'
-    ];
+    private string $table = 'portfolio_visitor_ip_tracker';
+
+    public function __construct(protected SupabaseService $supabaseService)
+    {}
 
     public function getIpInfo(Request $request): JsonResponse
     {
+//        $testData = [
+//                "ip" => "103.121.216.120",
+//                "network" => "103.121.216.0/23",
+//                "version" => "IPv4",
+//                "city" => "Dhaka",
+//                "region" => "Dhaka Division",
+//                "region_code" => "C",
+//                "country" => "BD",
+//                "country_name" => "Bangladesh",
+                //                                        "country_code" => "BD",
+                //                                        "country_code_iso3" => "BGD",
+                //                                        "country_capital" => "Dhaka",
+                //                                        "country_tld" => ".bd",
+                //                                        "continent_code" => "AS",
+                //                                        "in_eu" => false,
+//                "postal" => "1204",
+                //                                        "latitude" => 23.7004,
+                //                                        "longitude" => 90.4287,
+//                "timezone" => "Asia/Dhaka",
+                //                                        "utc_offset" => "+0600",
+                //                                        "country_calling_code" => "+880",
+                //                                        "currency" => "BDT",
+                //                                        "currency_name" => "Taka",
+                //                                        "languages" => "bn-BD,en",
+                //                                        "country_area" => 144000,
+                //                                        "country_population" => 161356039,
+//                "asn" => "AS134732",
+//                "org" => "Dot Internet",
+//        ];
         try {
             $ch = curl_init();
             $clientIp = $this->getClientIp($request); // "3.24.179.243";
@@ -42,35 +69,41 @@ class IpInfoController extends Controller
             curl_close($ch);
 
             if ($error) {
-                throw new \Exception("cURL error: " . $error);
+                throw new Exception("cURL error: " . $error);
             }
 
             if ($httpCode !== 200) {
-                throw new \Exception("HTTP error: " . $httpCode);
+                throw new Exception("HTTP error: " . $httpCode);
             }
 
             $data = json_decode($response, true);
 
             if (!$data) {
-                throw new \Exception("Invalid JSON response");
+                throw new Exception("Invalid JSON response");
             }
-
-//            $client   = $this->createAdvancedClient();
-//            $response = $client->get('https://ipapi.co/json/', [
-//                'headers' => $this->getRandomHeaders('http://ip-api.com'),
-//                'query' => ['fields' => 'status,message,country,regionName,city,lat,lon,timezone,isp,query']
-//            ]);
-//            if ($response->getStatusCode() === 200) {
-//                $body = $response->getBody()->getContents();
-//                $data = json_decode($body, true);
-//            }
 
             $formattedData = [
                 'success' => true,
                 'data'    => $data
             ];
 
-            return response()->json($formattedData, 200);
+            $insertData = [
+                "ip"           => $data['ip'] ?? $clientIp,
+                "network"      =>  $data['network'] ?? '',
+                "version"      =>  $data['version'] ?? '',
+                "city"         => $data['version'] ?? '',
+                "region"       => $data['region'] ?? '',
+                "region_code"  => $data['region_code'] ?? '',
+                "country"      => $data['country'] ?? '',
+                "country_name" => $data['country_name'] ?? '',
+                "postal"       => $data['postal'] ?? '',
+                "timezone"     => $data['timezone'] ?? '',
+                "asn"          => $data['asn'] ?? '',
+                "org"          => $data['org'] ?? '',
+            ];
+
+            $res = $this->supabaseService->insert('table', $insertData);
+            return response()->json($formattedData);
 
         } catch (RequestException $e) {
             return response()->json([
@@ -85,24 +118,6 @@ class IpInfoController extends Controller
                 'message' => $e->getMessage()
             ], 500);
         }
-    }
-
-    private function createAdvancedClient(): Client
-    {
-        return new Client([
-            'timeout' => 30,
-            'connect_timeout' => 10,
-            'verify' => false,
-            'http_errors' => false,
-            'curl' => [
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_MAXREDIRS => 3,
-                CURLOPT_TCP_NODELAY => true,
-                CURLOPT_SSL_VERIFYPEER => false,
-                CURLOPT_SSL_VERIFYHOST => false,
-                CURLOPT_USERAGENT => $this->getRandomUserAgent(),
-            ]
-        ]);
     }
 
     private function getRandomUserAgent(): string
