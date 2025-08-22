@@ -101,8 +101,21 @@ class IpInfoController extends Controller
                 "asn"          => $data['asn'] ?? '',
                 "org"          => $data['org'] ?? '',
             ];
-
-            $res = $this->supabaseService->insert('table', $insertData);
+//                    $testData = [
+//                            "ip" => "103.121.216.120",
+//                            "network" => "103.121.216.0/23",
+//                            "version" => "IPv4",
+//                            "city" => "Dhaka",
+//                            "region" => "Dhaka Division",
+//                            "region_code" => "C",
+//                            "country" => "BD",
+//                            "country_name" => "Bangladesh",
+//                            "postal" => "1204",
+//                            "timezone" => "Asia/Dhaka",
+//                            "asn" => "AS134732",
+//                            "org" => "Dot Internet",
+//                    ];
+            $res = $this->supabaseService->insert($this->table, $insertData);
             $formattedData['supa'] = $res;
             return response()->json($formattedData);
 
