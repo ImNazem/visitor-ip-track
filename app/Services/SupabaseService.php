@@ -16,8 +16,10 @@ class SupabaseService
 
     public function __construct()
     {
-        $this->url  = rtrim(env('SUPABASE_URL'), '/');
-        $this->key  = env('SUPABASE_SERVICE_KEY');
+        $this->url  = "https://udwtwsszjnfyhcnxpbmr.supabase.co"; // rtrim(env('SUPABASE_URL'), '/');
+        $this->key  = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVkd3R3c3N6am5meWhjbnhwYm1yIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NTgxNTk0NywiZXhwIjoyMDcxMzkxOTQ3fQ.HTr2gEEVmwwkTZ7HTIOBjALgAR_uYYlcgomK-tn7Cmk";
+        //env('SUPABASE_SERVICE_KEY');
+
         $this->http = new Client([
             'base_uri'    => $this->url,
             'http_errors' => false, // don't throw on 4xx/5xx
