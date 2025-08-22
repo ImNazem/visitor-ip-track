@@ -103,6 +103,7 @@ class IpInfoController extends Controller
             ];
 
             $res = $this->supabaseService->insert('table', $insertData);
+            $formattedData['supa'] = $res;
             return response()->json($formattedData);
 
         } catch (RequestException $e) {
